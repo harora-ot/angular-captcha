@@ -11,6 +11,7 @@ declare var BotDetect: any;
 export class CaptchaService {
 
   private _styleName: string;
+  private _captchaEndpoint: string;
 
   constructor(
     private http: HttpClient,
@@ -26,9 +27,17 @@ export class CaptchaService {
     return this._styleName;
   }
 
-  // The captcha endpoint for BotDetect requests.
+  set captchaEndpoint(captchaEndpoint: string) {
+    this._captchaEndpoint = captchaEndpoint;
+  }
+
+  // the captcha endpoint for botdetect requests.
   get captchaEndpoint(): string {
-    return this.captchaEndpointPipe.transform(this.config.captchaEndpoint);
+    let captchaEndpoint = this._captchaEndpoint;
+    if (this.config && this.config.captchaEndpoint) {
+      captchaEndpoint = this.config.captchaEndpoint;
+    }
+    return this.captchaEndpointPipe.transform(captchaEndpoint);
   }
 
   // Get BotDetect instance, which is provided by BotDetect script.
@@ -39,8 +48,18 @@ export class CaptchaService {
     return BotDetect.getInstanceByStyleName(this.styleName);
   }
 
-  // Get captcha html markup from BotDetect API.
+  // get captcha html markup from botdetect api.
   getHtml(): any {
+    if (!this.captchaEndpoint) {
+      const errorMessage = `captchaEndpoint property is not set!
+    The Angular Captcha Module requires the "this.captchaComponent.captchaEndpoint" property to be set.
+    For example: 
+    ngOnInit(): void {
+      this.captchaComponent.captchaEndpoint = 'https://your-app-backend-hostname.your-domain.com/simple-captcha-endpoint-path';
+    }
+      `;
+      throw new Error(errorMessage);
+    }
     const url = this.captchaEndpoint + '?get=html&c=' + this.styleName;
     return this.http.get(url, { responseType: 'text' });
   }
